@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% set title = t["backoffice_title"] ~ " | " ~ t["app_name"] %}
+
+{% block content %}
+  <section class="backoffice">
+    <div class="header">
+      <div>
+        <p class="badge">{{ t["backoffice_badge"] }}</p>
+        <h1>{{ t["backoffice_title"] }}</h1>
+        <p class="muted">{{ t["backoffice_lead"] }}</p>
+        <p class="muted">{{ t["backoffice_user_label"] }} {{ user["first_name"] }} {{ user["last_name"] }}</p>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="card">
+        <h3>{{ t["stats_roadmaps"] }}</h3>
+        <p class="big">{{ stats["roadmaps_count"] }}</p>
+      </div>
+      <div class="card">
+        <h3>{{ t["stats_insights"] }}</h3>
+        <p class="big">{{ stats["insights_count"] }}</p>
+      </div>
+      <div class="card">
+        <h3>{{ t["stats_analyses"] }}</h3>
+        <p class="big">{{ stats["analyses_count"] }}</p>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>{{ t["analysis_title"] }}</h2>
+        <p class="muted">{{ t["analysis_lead"] }}</p>
+        {% if error == "pdf" %}
+          <div class="alert">{{ t["analysis_error_pdf"] }}</div>
+        {% endif %}
+        <form method="post" action="/backoffice/profile-analysis" class="form" enctype="multipart/form-data">
+          <label>
+            {{ t["analysis_file_label"] }}
+            <input type="file" name="pdf_file" accept="application/pdf" required />
+          </label>
+          <button class="btn" type="submit">{{ t["analysis_button"] }}</button>
+        </form>
+        <p class="muted">{{ t["analysis_note_link_soon"] }}</p>
+        <div class="faq">
+          <h3>{{ t["faq_title"] }}</h3>
+          <ul>
+            <li>
+              <strong>{{ t["analysis_faq_q1"] }}</strong>
+              <span>{{ t["analysis_faq_a1"] }}</span>
+            </li>
+            <li>
+              <strong>{{ t["analysis_faq_q2"] }}</strong>
+              <span>{{ t["analysis_faq_a2"] }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>{{ t["roadmap_create_title"] }}</h2>
+        <form method="post" action="/backoffice/roadmap" class="form">
+          <label>
+            {{ t["roadmap_title_label"] }}
+            <input type="text" name="title" required />
+          </label>
+          <label>
+            {{ t["roadmap_details_label"] }}
+            <textarea name="content" rows="4" required></textarea>
+          </label>
+          <button class="btn" type="submit">{{ t["roadmap_button"] }}</button>
+        </form>
+        <div class="faq">
+          <h3>{{ t["faq_title"] }}</h3>
+          <ul>
+            <li>
+              <strong>{{ t["roadmap_faq_q1"] }}</strong>
+              <span>{{ t["roadmap_faq_a1"] }}</span>
+            </li>
+            <li>
+              <strong>{{ t["roadmap_faq_q2"] }}</strong>
+              <span>{{ t["roadmap_faq_a2"] }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>{{ t["insight_create_title"] }}</h2>
+        <form method="post" action="/backoffice/insight" class="form">
+          <label>
+            {{ t["insight_label"] }}
+            <textarea name="summary" rows="4" required></textarea>
+          </label>
+          <button class="btn" type="submit">{{ t["insight_button"] }}</button>
+        </form>
+        <div class="faq">
+          <h3>{{ t["faq_title"] }}</h3>
+          <ul>
+            <li>
+              <strong>{{ t["insight_faq_q1"] }}</strong>
+              <span>{{ t["insight_faq_a1"] }}</span>
+            </li>
+            <li>
+              <strong>{{ t["insight_faq_q2"] }}</strong>
+              <span>{{ t["insight_faq_a2"] }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>{{ t["analysis_recent_title"] }}</h2>
+        {% if analyses %}
+          <ul class="list">
+            {% for item in analyses %}
+              <li>
+                <strong>{{ t["analysis_status_label"] }}: {{ item["status"] }}</strong>
+                <p>{{ t["label_source"] }}: {{ item["source"] }}</p>
+                {% if item["score"] %}
+                  <p>{{ t["analysis_score_label"] }}: {{ item["score"] }}</p>
+                {% endif %}
+                {% if item["summary"] %}
+                  <p>{{ t["analysis_summary_label"] }}: {{ item["summary"] }}</p>
+                {% endif %}
+                {% if item["recommendations"] %}
+                  <p class="muted">{{ t["analysis_recommendations_label"] }}:</p>
+                  <ul class="list">
+                    {% for rec in item["recommendations"] %}
+                      <li>{{ rec }}</li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+                {% if item["report"] %}
+                  <p class="muted">{{ t["analysis_report_label"] }}:</p>
+                  <ul class="list">
+                    {% for crit in item["report"] %}
+                      <li>
+                        <strong>{{ crit["label"] }}</strong>
+                        <p>{{ t["analysis_report_score"] }}: {{ crit["score"] }}/{{ crit["weight"] }}</p>
+                        <p>{{ t["analysis_report_status"] }}: {{ t["analysis_report_pass"] if crit["passed"] else t["analysis_report_fail"] }}</p>
+                        <p class="muted">{{ crit["evidence"] }}</p>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+                {% if item["red_flags"] %}
+                  <p class="muted">{{ t["analysis_red_flags_label"] }}:</p>
+                  <ul class="list">
+                    {% for rf in item["red_flags"] %}
+                      <li>{{ rf }}</li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+                <span class="muted">{{ t["label_created_at"] }} {{ item["created_at"] }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted">{{ t["analysis_empty"] }}</p>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h2>{{ t["roadmap_recent_title"] }}</h2>
+        {% if roadmaps %}
+          <ul class="list">
+            {% for item in roadmaps %}
+              <li>
+                <strong>{{ item["title"] }}</strong>
+                <p>{{ item["content"] }}</p>
+                <span class="muted">{{ t["label_created_at"] }} {{ item["created_at"] }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted">{{ t["roadmap_empty"] }}</p>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h2>{{ t["insight_recent_title"] }}</h2>
+        {% if insights %}
+          <ul class="list">
+            {% for item in insights %}
+              <li>
+                <p>{{ item["summary"] }}</p>
+                <span class="muted">{{ t["label_created_at"] }} {{ item["created_at"] }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted">{{ t["insight_empty"] }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+{% endblock %}

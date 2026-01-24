@@ -1,0 +1,194 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  background: #ffffff;
+  color: #222222;
+}
+
+a {
+  color: #222222;
+  text-decoration: underline;
+}
+
+.container {
+  width: min(1100px, 92%);
+  margin: 0 auto;
+  padding: 24px 0 48px;
+}
+
+.topbar {
+  border-bottom: 1px solid #e0e0e0;
+  padding: 12px 0;
+}
+
+.topbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+nav {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.lang-switcher {
+  display: flex;
+  gap: 6px;
+}
+
+.lang-link.active {
+  font-weight: bold;
+}
+
+.btn {
+  border: 1px solid #222222;
+  background: #f5f5f5;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.btn.ghost {
+  background: transparent;
+}
+
+.btn.full {
+  width: 100%;
+}
+
+.badge {
+  font-weight: bold;
+}
+
+.hero,
+.grid,
+.stats {
+  display: grid;
+  gap: 16px;
+}
+
+.hero {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.card {
+  border: 1px solid #e0e0e0;
+  padding: 16px;
+}
+
+.form {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+}
+
+input,
+textarea,
+select {
+  border: 1px solid #bdbdbd;
+  padding: 8px;
+}
+
+.phone-group {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 10px;
+}
+
+.helper,
+.muted {
+  color: #666666;
+  font-size: 0.9rem;
+}
+
+.list {
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.list li {
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 8px;
+}
+
+.inline-form {
+  display: inline;
+}
+
+.inline-check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.button-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.table th,
+.table td {
+  border: 1px solid #e0e0e0;
+  padding: 6px;
+  text-align: left;
+}
+
+.chart {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+
+.chart-row {
+  display: grid;
+  gap: 6px;
+}
+
+.chart-label {
+  font-weight: bold;
+}
+
+.chart-bars {
+  display: grid;
+  gap: 6px;
+}
+
+.bar {
+  position: relative;
+  height: 16px;
+  background: #f2f2f2;
+  border: 1px solid #e0e0e0;
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  background: #bdbdbd;
+}
+
+.bar-label {
+  position: absolute;
+  top: -1.2rem;
+  left: 0;
+  font-size: 0.8rem;
+}

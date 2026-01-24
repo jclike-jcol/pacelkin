@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% set title = t["register_title"] ~ " | " ~ t["app_name"] %}
+
+{% block content %}
+  <section class="auth">
+    <div class="card">
+      <h2>{{ t["register_title"] }}</h2>
+      <p class="muted">{{ t["register_lead"] }}</p>
+      {% if error %}
+        <div class="alert">{{ error }}</div>
+      {% endif %}
+      <form method="post" action="/register" class="form">
+        <label>
+          {{ t["register_first_name_label"] }}
+          <input type="text" name="first_name" required />
+        </label>
+        <label>
+          {{ t["register_last_name_label"] }}
+          <input type="text" name="last_name" required />
+        </label>
+        <label>
+          {{ t["register_email_label"] }}
+          <input type="email" name="email" required />
+        </label>
+        <label>
+          {{ t["register_phone_label"] }}
+          <div class="phone-group">
+            <select name="country_code" required>
+              <option value="+351">PT (+351)</option>
+              <option value="+34">ES (+34)</option>
+              <option value="+33">FR (+33)</option>
+              <option value="+49">DE (+49)</option>
+              <option value="+44">UK (+44)</option>
+              <option value="+1">US (+1)</option>
+            </select>
+            <input type="tel" name="phone" required placeholder="9xx xxx xxx" />
+          </div>
+          <span class="helper">{{ t["register_phone_help"] }}</span>
+        </label>
+        <label>
+          {{ t["register_nif_label"] }}
+          <input type="text" name="nif" />
+          <span class="helper">{{ t["register_nif_help"] }}</span>
+        </label>
+        <label>
+          {{ t["register_password_label"] }}
+          <input type="password" name="password" required minlength="6" />
+        </label>
+        <button class="btn full" type="submit">{{ t["register_button"] }}</button>
+      </form>
+      <p class="muted">
+        {{ t["register_footer"] }} <a href="/login">{{ t["nav_login"] }}</a>.
+      </p>
+      <div class="faq">
+        <h3>{{ t["faq_title"] }}</h3>
+        <ul>
+          <li>
+            <strong>{{ t["register_faq_q1"] }}</strong>
+            <span>{{ t["register_faq_a1"] }}</span>
+          </li>
+          <li>
+            <strong>{{ t["register_faq_q2"] }}</strong>
+            <span>{{ t["register_faq_a2"] }}</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+{% endblock %}

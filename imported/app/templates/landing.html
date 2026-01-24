@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% set title = "Landing | " ~ t["app_name"] %}
+
+{% block content %}
+  <section class="hero">
+    <div>
+      <p class="badge">{{ t["landing_badge"] }}</p>
+      <h1>{{ t["landing_title"] }}</h1>
+      <p class="lead">
+        {{ t["landing_lead"] }}
+      </p>
+      <div class="actions">
+        <a class="btn" href="/register">{{ t["landing_cta_register"] }}</a>
+        <a class="btn ghost" href="/login">{{ t["landing_cta_login"] }}</a>
+      </div>
+    </div>
+    <div class="card highlight">
+      <h3>{{ t["landing_card_title"] }}</h3>
+      <ul>
+        <li>{{ t["landing_card_item1"] }}</li>
+        <li>{{ t["landing_card_item2"] }}</li>
+        <li>{{ t["landing_card_item3"] }}</li>
+        <li>{{ t["landing_card_item4"] }}</li>
+      </ul>
+    </div>
+  </section>
+  <section class="card faq">
+    <h3>{{ t["faq_title"] }}</h3>
+    <ul>
+      <li>
+        <strong>{{ t["landing_faq_q1"] }}</strong>
+        <span>{{ t["landing_faq_a1"] }}</span>
+      </li>
+    </ul>
+  </section>
+{% endblock %}

@@ -1,0 +1,489 @@
+{% extends "base.html" %}
+{% set title = t["kpis_title"] ~ " | " ~ t["app_name"] %}
+
+{% block content %}
+  <section class="backoffice">
+    <div class="header">
+      <div>
+        <p class="badge">{{ t["kpis_badge"] }}</p>
+        <h1>{{ t["kpis_title"] }}</h1>
+        <p class="muted">{{ t["kpis_lead"] }}</p>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>{{ t["kpis_daily_title"] }}</h2>
+        <form method="post" action="/kpis/entry" class="form">
+          <label>
+            {{ t["kpis_date_label"] }}
+            <input type="date" name="entry_date" required />
+          </label>
+          <label>
+            {{ t["kpis_invites_label"] }}
+            <input type="number" name="connection_invites" min="0" />
+          </label>
+          <label>
+            {{ t["kpis_events_label"] }}
+            <input type="number" name="events_attended" min="0" />
+          </label>
+          <label>
+            {{ t["kpis_new_connections_label"] }}
+            <input type="number" name="new_connections" min="0" />
+          </label>
+          <label>
+            {{ t["kpis_profile_views_label"] }}
+            <input type="number" name="profile_views" min="0" />
+          </label>
+          <label>
+            {{ t["kpis_notes_label"] }}
+            <textarea name="notes" rows="3"></textarea>
+          </label>
+          <button class="btn" type="submit">{{ t["kpis_save_button"] }}</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>{{ t["kpis_posts_title"] }}</h2>
+        <form method="post" action="/kpis/post" class="form">
+          <label>
+            {{ t["kpis_date_label"] }}
+            <input type="date" name="post_date" required />
+          </label>
+          <label>
+            {{ t["kpis_post_title_label"] }}
+            <input type="text" name="title" required />
+          </label>
+          <label>
+            {{ t["kpis_post_format_label"] }}
+            <select name="format_value" required>
+              <option value="carrossel">{{ t["kpis_format_carousel"] }}</option>
+              <option value="video">{{ t["kpis_format_video"] }}</option>
+              <option value="texto">{{ t["kpis_format_text"] }}</option>
+              <option value="artigo">{{ t["kpis_format_article"] }}</option>
+              <option value="newsletter">{{ t["kpis_format_newsletter"] }}</option>
+            </select>
+          </label>
+          <label>
+            {{ t["kpis_impressions_label"] }}
+            <input type="number" name="impressions" min="0" />
+          </label>
+          <label>
+            {{ t["kpis_reach_label"] }}
+            <input type="number" name="reach" min="0" />
+          </label>
+          <label>
+            {{ t["kpis_saves_label"] }}
+            <input type="number" name="saves" min="0" />
+          </label>
+          <label>
+            {{ t["kpis_comments_label"] }}
+            <input type="number" name="comments" min="0" />
+          </label>
+          <label>
+            {{ t["kpis_meaningful_comments_label"] }}
+            <input type="number" name="meaningful_comments" min="0" />
+          </label>
+          <label>
+            {{ t["kpis_likes_label"] }}
+            <input type="number" name="likes" min="0" />
+          </label>
+          <label>
+            {{ t["kpis_shares_label"] }}
+            <input type="number" name="shares" min="0" />
+          </label>
+          <label>
+            {{ t["kpis_clicks_label"] }}
+            <input type="number" name="clicks" min="0" />
+          </label>
+          <label>
+            {{ t["kpis_dwell_time_label"] }}
+            <input type="number" name="dwell_time_seconds" min="0" />
+          </label>
+          <label class="inline-check">
+            <input type="checkbox" name="is_case_study" />
+            <span>{{ t["kpis_case_study_label"] }}</span>
+          </label>
+          <label>
+            {{ t["kpis_notes_label"] }}
+            <textarea name="notes" rows="3"></textarea>
+          </label>
+          <button class="btn" type="submit">{{ t["kpis_save_post_button"] }}</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>{{ t["kpis_highlights_title"] }}</h2>
+        <p class="muted">{{ t["kpis_highlights_lead"] }}</p>
+        <ul class="list">
+          <li>
+            <strong>{{ t["kpis_total_invites"] }}:</strong> {{ kpi_summary["total_invites"] }}
+          </li>
+          <li>
+            <strong>{{ t["kpis_total_events"] }}:</strong> {{ kpi_summary["total_events"] }}
+          </li>
+          <li>
+            <strong>{{ t["kpis_total_new_connections"] }}:</strong> {{ kpi_summary["total_new_connections"] }}
+          </li>
+          <li>
+            <strong>{{ t["kpis_total_profile_views"] }}:</strong> {{ kpi_summary["total_profile_views"] }}
+          </li>
+          <li>
+            <strong>{{ t["kpis_total_case_studies"] }}:</strong> {{ post_highlights["case_studies"] }}
+          </li>
+        </ul>
+        {% if post_highlights["top_saves"] %}
+          <p class="muted">{{ t["kpis_top_saves"] }}</p>
+          <p><strong>{{ post_highlights["top_saves"]["title"] }}</strong> — {{ post_highlights["top_saves"]["saves"] }} {{ t["kpis_saves_label"] }}</p>
+        {% endif %}
+        {% if post_highlights["top_reach"] %}
+          <p class="muted">{{ t["kpis_top_reach"] }}</p>
+          <p><strong>{{ post_highlights["top_reach"]["title"] }}</strong> — {{ post_highlights["top_reach"]["reach"] }} {{ t["kpis_reach_label"] }}</p>
+        {% endif %}
+        {% if post_highlights["top_dwell"] %}
+          <p class="muted">{{ t["kpis_top_dwell"] }}</p>
+          <p><strong>{{ post_highlights["top_dwell"]["title"] }}</strong> — {{ post_highlights["top_dwell"]["dwell_time_seconds"] }} {{ t["kpis_dwell_time_unit"] }}</p>
+        {% endif %}
+        {% if post_highlights["top_meaningful"] %}
+          <p class="muted">{{ t["kpis_top_meaningful_comments"] }}</p>
+          <p><strong>{{ post_highlights["top_meaningful"]["title"] }}</strong> — {{ post_highlights["top_meaningful"]["meaningful_comments"] }} {{ t["kpis_meaningful_comments_label"] }}</p>
+        {% endif %}
+        <div class="button-row">
+          <a class="btn ghost" href="/kpis/export">{{ t["kpis_export_kpis"] }}</a>
+          <a class="btn ghost" href="/kpis/posts/export">{{ t["kpis_export_posts"] }}</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>{{ t["kpis_trends_title"] }}</h2>
+        <p class="muted">{{ t["kpis_trends_lead"] }}</p>
+        <div class="grid">
+          <div class="card">
+            <h3>{{ t["kpis_last_7_days"] }}</h3>
+            <p>{{ t["kpis_invites_label"] }}: {{ kpi_trends["last_7_days"]["invites"] }}</p>
+            <p>{{ t["kpis_events_label"] }}: {{ kpi_trends["last_7_days"]["events"] }}</p>
+            <p>{{ t["kpis_new_connections_label"] }}: {{ kpi_trends["last_7_days"]["connections"] }}</p>
+            <p>{{ t["kpis_profile_views_label"] }}: {{ kpi_trends["last_7_days"]["views"] }}</p>
+            <p>{{ t["kpis_posts_label"] }}: {{ post_trends["last_7_days"]["posts"] }}</p>
+            <p>{{ t["kpis_saves_label"] }}: {{ post_trends["last_7_days"]["saves"] }}</p>
+            <p>{{ t["kpis_reach_label"] }}: {{ post_trends["last_7_days"]["reach"] }}</p>
+            <p>{{ t["kpis_shares_label"] }}: {{ post_trends["last_7_days"]["shares"] }}</p>
+            <p>{{ t["kpis_meaningful_comments_label"] }}: {{ post_trends["last_7_days"]["meaningful_comments"] }}</p>
+            <p>{{ t["kpis_dwell_time_label"] }}: {{ post_trends["last_7_days"]["dwell_time_seconds"] }}</p>
+          </div>
+          <div class="card">
+            <h3>{{ t["kpis_last_30_days"] }}</h3>
+            <p>{{ t["kpis_invites_label"] }}: {{ kpi_trends["last_30_days"]["invites"] }}</p>
+            <p>{{ t["kpis_events_label"] }}: {{ kpi_trends["last_30_days"]["events"] }}</p>
+            <p>{{ t["kpis_new_connections_label"] }}: {{ kpi_trends["last_30_days"]["connections"] }}</p>
+            <p>{{ t["kpis_profile_views_label"] }}: {{ kpi_trends["last_30_days"]["views"] }}</p>
+            <p>{{ t["kpis_posts_label"] }}: {{ post_trends["last_30_days"]["posts"] }}</p>
+            <p>{{ t["kpis_saves_label"] }}: {{ post_trends["last_30_days"]["saves"] }}</p>
+            <p>{{ t["kpis_reach_label"] }}: {{ post_trends["last_30_days"]["reach"] }}</p>
+            <p>{{ t["kpis_shares_label"] }}: {{ post_trends["last_30_days"]["shares"] }}</p>
+            <p>{{ t["kpis_meaningful_comments_label"] }}: {{ post_trends["last_30_days"]["meaningful_comments"] }}</p>
+            <p>{{ t["kpis_dwell_time_label"] }}: {{ post_trends["last_30_days"]["dwell_time_seconds"] }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>{{ t["kpis_weekly_title"] }}</h2>
+        <p class="muted">{{ t["kpis_weekly_lead"] }}</p>
+        <h3>{{ t["kpis_weekly_kpis_title"] }}</h3>
+        {% if kpi_weekly %}
+          <div class="chart">
+            {% for row in kpi_weekly %}
+              <div class="chart-row">
+                <span class="chart-label">{{ row["period"] }}</span>
+                <div class="chart-bars">
+                  <div class="bar">
+                    <span class="bar-fill" style="width: {{ row['percentages']['connection_invites'] }}%"></span>
+                    <span class="bar-label">{{ t["kpis_invites_label"] }} ({{ row["connection_invites"] }})</span>
+                  </div>
+                  <div class="bar">
+                    <span class="bar-fill" style="width: {{ row['percentages']['new_connections'] }}%"></span>
+                    <span class="bar-label">{{ t["kpis_new_connections_label"] }} ({{ row["new_connections"] }})</span>
+                  </div>
+                  <div class="bar">
+                    <span class="bar-fill" style="width: {{ row['percentages']['profile_views'] }}%"></span>
+                    <span class="bar-label">{{ t["kpis_profile_views_label"] }} ({{ row["profile_views"] }})</span>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>{{ t["kpis_period_label"] }}</th>
+                <th>{{ t["kpis_invites_label"] }}</th>
+                <th>{{ t["kpis_events_label"] }}</th>
+                <th>{{ t["kpis_new_connections_label"] }}</th>
+                <th>{{ t["kpis_profile_views_label"] }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in kpi_weekly %}
+                <tr>
+                  <td>{{ row["period"] }}</td>
+                  <td>{{ row["connection_invites"] }}</td>
+                  <td>{{ row["events_attended"] }}</td>
+                  <td>{{ row["new_connections"] }}</td>
+                  <td>{{ row["profile_views"] }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="muted">{{ t["kpis_empty"] }}</p>
+        {% endif %}
+        <h3>{{ t["kpis_weekly_posts_title"] }}</h3>
+        {% if post_weekly %}
+          <div class="chart">
+            {% for row in post_weekly %}
+              <div class="chart-row">
+                <span class="chart-label">{{ row["period"] }}</span>
+                <div class="chart-bars">
+                  <div class="bar">
+                    <span class="bar-fill" style="width: {{ row['percentages']['saves'] }}%"></span>
+                    <span class="bar-label">{{ t["kpis_saves_label"] }} ({{ row["saves"] }})</span>
+                  </div>
+                  <div class="bar">
+                    <span class="bar-fill" style="width: {{ row['percentages']['reach'] }}%"></span>
+                    <span class="bar-label">{{ t["kpis_reach_label"] }} ({{ row["reach"] }})</span>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>{{ t["kpis_period_label"] }}</th>
+                <th>{{ t["kpis_posts_label"] }}</th>
+                <th>{{ t["kpis_saves_label"] }}</th>
+                <th>{{ t["kpis_reach_label"] }}</th>
+                <th>{{ t["kpis_meaningful_comments_label"] }}</th>
+                <th>{{ t["kpis_shares_label"] }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in post_weekly %}
+                <tr>
+                  <td>{{ row["period"] }}</td>
+                  <td>{{ row["posts"] }}</td>
+                  <td>{{ row["saves"] }}</td>
+                  <td>{{ row["reach"] }}</td>
+                  <td>{{ row["meaningful_comments"] }}</td>
+                  <td>{{ row["shares"] }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="muted">{{ t["kpis_posts_empty"] }}</p>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h2>{{ t["kpis_monthly_title"] }}</h2>
+        <p class="muted">{{ t["kpis_monthly_lead"] }}</p>
+        <h3>{{ t["kpis_monthly_kpis_title"] }}</h3>
+        {% if kpi_monthly %}
+          <div class="chart">
+            {% for row in kpi_monthly %}
+              <div class="chart-row">
+                <span class="chart-label">{{ row["period"] }}</span>
+                <div class="chart-bars">
+                  <div class="bar">
+                    <span class="bar-fill" style="width: {{ row['percentages']['connection_invites'] }}%"></span>
+                    <span class="bar-label">{{ t["kpis_invites_label"] }} ({{ row["connection_invites"] }})</span>
+                  </div>
+                  <div class="bar">
+                    <span class="bar-fill" style="width: {{ row['percentages']['new_connections'] }}%"></span>
+                    <span class="bar-label">{{ t["kpis_new_connections_label"] }} ({{ row["new_connections"] }})</span>
+                  </div>
+                  <div class="bar">
+                    <span class="bar-fill" style="width: {{ row['percentages']['profile_views'] }}%"></span>
+                    <span class="bar-label">{{ t["kpis_profile_views_label"] }} ({{ row["profile_views"] }})</span>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>{{ t["kpis_period_label"] }}</th>
+                <th>{{ t["kpis_invites_label"] }}</th>
+                <th>{{ t["kpis_events_label"] }}</th>
+                <th>{{ t["kpis_new_connections_label"] }}</th>
+                <th>{{ t["kpis_profile_views_label"] }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in kpi_monthly %}
+                <tr>
+                  <td>{{ row["period"] }}</td>
+                  <td>
+                    {{ row["connection_invites"] }}
+                    {% if row["delta"] %}
+                      <span class="muted">({{ t["kpis_delta_label"] }} {{ row["delta"]["connection_invites"]["diff"] }}, {{ row["delta"]["connection_invites"]["percent"] }}%)</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ row["events_attended"] }}</td>
+                  <td>
+                    {{ row["new_connections"] }}
+                    {% if row["delta"] %}
+                      <span class="muted">({{ t["kpis_delta_label"] }} {{ row["delta"]["new_connections"]["diff"] }}, {{ row["delta"]["new_connections"]["percent"] }}%)</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {{ row["profile_views"] }}
+                    {% if row["delta"] %}
+                      <span class="muted">({{ t["kpis_delta_label"] }} {{ row["delta"]["profile_views"]["diff"] }}, {{ row["delta"]["profile_views"]["percent"] }}%)</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="muted">{{ t["kpis_empty"] }}</p>
+        {% endif %}
+        <h3>{{ t["kpis_monthly_posts_title"] }}</h3>
+        {% if post_monthly %}
+          <div class="chart">
+            {% for row in post_monthly %}
+              <div class="chart-row">
+                <span class="chart-label">{{ row["period"] }}</span>
+                <div class="chart-bars">
+                  <div class="bar">
+                    <span class="bar-fill" style="width: {{ row['percentages']['saves'] }}%"></span>
+                    <span class="bar-label">{{ t["kpis_saves_label"] }} ({{ row["saves"] }})</span>
+                  </div>
+                  <div class="bar">
+                    <span class="bar-fill" style="width: {{ row['percentages']['reach'] }}%"></span>
+                    <span class="bar-label">{{ t["kpis_reach_label"] }} ({{ row["reach"] }})</span>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>{{ t["kpis_period_label"] }}</th>
+                <th>{{ t["kpis_posts_label"] }}</th>
+                <th>{{ t["kpis_saves_label"] }}</th>
+                <th>{{ t["kpis_reach_label"] }}</th>
+                <th>{{ t["kpis_meaningful_comments_label"] }}</th>
+                <th>{{ t["kpis_shares_label"] }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in post_monthly %}
+                <tr>
+                  <td>{{ row["period"] }}</td>
+                  <td>{{ row["posts"] }}</td>
+                  <td>
+                    {{ row["saves"] }}
+                    {% if row["delta"] %}
+                      <span class="muted">({{ t["kpis_delta_label"] }} {{ row["delta"]["saves"]["diff"] }}, {{ row["delta"]["saves"]["percent"] }}%)</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {{ row["reach"] }}
+                    {% if row["delta"] %}
+                      <span class="muted">({{ t["kpis_delta_label"] }} {{ row["delta"]["reach"]["diff"] }}, {{ row["delta"]["reach"]["percent"] }}%)</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ row["meaningful_comments"] }}</td>
+                  <td>{{ row["shares"] }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="muted">{{ t["kpis_posts_empty"] }}</p>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h2>{{ t["kpis_filters_title"] }}</h2>
+        <form method="get" action="/kpis" class="form">
+          <label>
+            {{ t["kpis_post_format_label"] }}
+            <select name="format">
+              <option value="all" {% if format_filter == "all" %}selected{% endif %}>{{ t["kpis_filter_all"] }}</option>
+              <option value="carrossel" {% if format_filter == "carrossel" %}selected{% endif %}>{{ t["kpis_format_carousel"] }}</option>
+              <option value="video" {% if format_filter == "video" %}selected{% endif %}>{{ t["kpis_format_video"] }}</option>
+              <option value="texto" {% if format_filter == "texto" %}selected{% endif %}>{{ t["kpis_format_text"] }}</option>
+              <option value="artigo" {% if format_filter == "artigo" %}selected{% endif %}>{{ t["kpis_format_article"] }}</option>
+              <option value="newsletter" {% if format_filter == "newsletter" %}selected{% endif %}>{{ t["kpis_format_newsletter"] }}</option>
+            </select>
+          </label>
+          <label>
+            {{ t["kpis_case_study_label"] }}
+            <select name="case">
+              <option value="all" {% if case_filter == "all" %}selected{% endif %}>{{ t["kpis_filter_all"] }}</option>
+              <option value="case" {% if case_filter == "case" %}selected{% endif %}>{{ t["kpis_filter_case_only"] }}</option>
+            </select>
+          </label>
+          <button class="btn" type="submit">{{ t["kpis_filter_apply"] }}</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>{{ t["kpis_history_title"] }}</h2>
+        {% if kpi_entries %}
+          <ul class="list">
+            {% for item in kpi_entries %}
+              <li>
+                <strong>{{ item["entry_date"] }}</strong>
+                <p>{{ t["kpis_invites_label"] }}: {{ item["connection_invites"] }}</p>
+                <p>{{ t["kpis_events_label"] }}: {{ item["events_attended"] }}</p>
+                <p>{{ t["kpis_new_connections_label"] }}: {{ item["new_connections"] }}</p>
+                <p>{{ t["kpis_profile_views_label"] }}: {{ item["profile_views"] }}</p>
+                {% if item["notes"] %}
+                  <p class="muted">{{ item["notes"] }}</p>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted">{{ t["kpis_empty"] }}</p>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h2>{{ t["kpis_posts_history_title"] }}</h2>
+        {% if post_entries %}
+          <ul class="list">
+            {% for item in post_entries %}
+              <li>
+                <strong>{{ item["post_date"] }} — {{ item["title"] }}</strong>
+                <p>{{ t["kpis_post_format_label"] }}: {{ item["format"] }}</p>
+                <p>{{ t["kpis_saves_label"] }}: {{ item["saves"] }} | {{ t["kpis_reach_label"] }}: {{ item["reach"] }}</p>
+                <p>{{ t["kpis_impressions_label"] }}: {{ item["impressions"] }} | {{ t["kpis_comments_label"] }}: {{ item["comments"] }}</p>
+                <p>{{ t["kpis_meaningful_comments_label"] }}: {{ item.get("meaningful_comments", 0) }} | {{ t["kpis_shares_label"] }}: {{ item.get("shares", 0) }}</p>
+                <p>{{ t["kpis_dwell_time_label"] }}: {{ item.get("dwell_time_seconds", 0) }} {{ t["kpis_dwell_time_unit"] }}</p>
+                {% if item["is_case_study"] %}
+                  <p class="muted">{{ t["kpis_case_study_tag"] }}</p>
+                {% endif %}
+                {% if item["notes"] %}
+                  <p class="muted">{{ item["notes"] }}</p>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted">{{ t["kpis_posts_empty"] }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+{% endblock %}

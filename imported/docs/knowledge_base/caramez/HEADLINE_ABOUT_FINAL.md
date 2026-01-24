@@ -1,0 +1,70 @@
+# Perfil LinkedIn - Versão Final
+
+## Headline (120 caracteres)
+
+```
+Fundador CloserPace | CEO CTZ (Wahl, Sara Simar, Incospel) | Testo tudo antes de ensinar | Método PACE | 37 anos B2B
+```
+
+## About / Sobre (2.550 caracteres)
+
+```
+Fundador do CloserPace. CEO da CTZ-The Only Choice.
+Não ensino teoria de vendas - testo tudo diariamente no meu laboratório real B2B.
+
+Cada estratégia que codifiquei no CloserPace, cada técnica que partilho em mentoria, foi validada primeiro na CTZ onde represento 3 fabricantes internacionais para o mercado grossista português.
+
+// O MEU LABORATÓRIO REAL
+
+CTZ é onde provo que o que ensino funciona:
+
+→ Wahl & Moser: máquinas profissionais cabeleireiro (líderes mundiais)
+→ Sara Simar: cosmética facial profissional
+→ Incospel: marcas KeenStrok, Jaipur, Kuul (cosméticos capilares)
+
+Rede comercial grossista B2B desde 1992. Antes: 20 anos Capel-lo (posticeria), 6 anos Vie-Long.
+
+Cada objeção superada, cada negociação fechada, cada erro - alimenta o CloserPace e refina o que ensino.
+
+// CLOSERPACE: 37 ANOS CODIFICADOS EM IA
+
+Nasceu de uma frustração: vendedores talentosos a falhar por falta de sistema, não de capacidade.
+
+Não é ChatGPT genérico. Não é mais um curso que ninguém acaba.
+
+É metodologia PACE (Prospeção, Atendimento, Conversão, Empoderamento) desenvolvida em 37 anos no terreno, codificada numa ferramenta que funciona como mentor 24/7.
+
+Resultados <2min. 16+ ferramentas integradas. Plano de ação imediato.
+
+Construído com Lovable (no-code) porque vendas do futuro = análise de dados + conteúdo relevante + automações. IA liberta vendedores para criar relações genuínas e fechar negócios complexos.
+
+// 37 ANOS NAS TRINCHEIRAS
+
+1988: Comissionista puro. Sem ordenado fixo. Sem desculpas.
+
+1992-2020: Representação internacional. Modelo em eventos, utilizador posticeria, formador técnico. Vivi todos os lados do balcão.
+
+2020: Fundei a CTZ digitalmente. Pandemia acelerou transformação.
+
+2024: Lancei CloserPace - 37 anos codificados numa ferramenta acessível.
+
+// PARA QUEM SIRVO
+
+Vendedores B2B que querem sistemas, não motivação vazia.
+Comissionistas que vivem do resultado e precisam de organização.
+Micro-empreendedores sem budget para consultores.
+Gestores que querem replicar boas práticas nas equipas.
+
+Teoria bonita? Há milhares de opções.
+O que funciona no terreno testado diariamente? Estás no sítio certo.
+
+→ CloserPace: closerpace.com (lançamento 1 Jan 2025)
+→ Mentoria: PACE + Fórmula 5C à tua medida
+→ Formações B2B: treino prático
+→ Newsletter: casos reais (jcol.pt)
+
+Contacto: jcol@jcol.pt
+
+Se algo merece ser feito, merece ser BEM FEITO à primeira.
+Aprendi isso a perder negócios. Agora ajudo outros a não repetirem os meus erros.
+```

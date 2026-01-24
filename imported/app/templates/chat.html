@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% set title = t["chat_title"] ~ " | " ~ t["app_name"] %}
+
+{% block content %}
+  <section class="backoffice">
+    <div class="header">
+      <div>
+        <p class="badge">{{ t["chat_badge"] }}</p>
+        <h1>{{ t["chat_title"] }}</h1>
+        <p class="muted">{{ t["chat_lead"] }}</p>
+      </div>
+    </div>
+
+    <div class="card chat-box">
+      <div class="chat-messages">
+        {% if messages %}
+          {% for item in messages %}
+            <div class="chat-message {{ item["role"] }}">
+              <div>{{ item["content"] }}</div>
+              <div class="chat-meta">{{ item["created_at"] }}</div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="muted">{{ t["chat_empty"] }}</p>
+        {% endif %}
+      </div>
+
+      <form method="post" action="/chat" class="form">
+        <label>
+          {{ t["chat_input_label"] }}
+          <textarea name="message" rows="4" required></textarea>
+        </label>
+        <button class="btn" type="submit">{{ t["chat_send"] }}</button>
+      </form>
+
+      <div class="faq">
+        <h3>{{ t["faq_title"] }}</h3>
+        <ul>
+          <li>
+            <strong>{{ t["chat_faq_q1"] }}</strong>
+            <span>{{ t["chat_faq_a1"] }}</span>
+          </li>
+          <li>
+            <strong>{{ t["chat_faq_q2"] }}</strong>
+            <span>{{ t["chat_faq_a2"] }}</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+{% endblock %}
