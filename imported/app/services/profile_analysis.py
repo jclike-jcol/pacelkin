@@ -2,10 +2,21 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Tuple
-import re
+from typing import Dict, List, Tuple, Any
 
+import re
+from deep_translator import GoogleTranslator
 from pypdf import PdfReader
+
+
+# Códigos de idioma para o Google Translator (pt-PT -> pt)
+GOOGLE_LANG_MAP = {
+    "pt-PT": "pt",
+    "en": "en",
+    "es": "es",
+    "fr": "fr",
+    "de": "de",
+}
 
 
 SECTION_TITLES = [
@@ -718,3 +729,45 @@ def analyze_profile(file_path: str, lang: str = "pt-PT") -> ProfileAnalysis:
         red_flags=red_flags,
         report=report,
     )
+
+
+def _translate_text(text: str, source_lang: str, target_lang: str) -> str:
+    if not text or not text.strip():
+        return text
+    src = GOOGLE_LANG_MAP.get(source_lang, source_lang if source_lang in ("en", "es", "fr", "de") else "auto")
+    tgt = GOOGLE_LANG_MAP.get(target_lang, target_lang)
+    if src == tgt:
+        return text
+    try:
+        translator = GoogleTranslator(source=src, target=tgt)
+        return translator.translate(text[:5000]) or text  # limite por pedido
+    except Exception:
+        return text
+
+
+def translate_analysis_result(
+    summary: str,
+    recommendations: List[str],
+    red_flags: List[str],
+    report: List[Dict[str, Any]],
+    source_lang: str,
+    target_lang: str,
+) -> Tuple[str, List[str], List[str], List[Dict[str, Any]]]:
+    """
+    Traduz o resultado de uma análise de perfil para outro idioma.
+    Devolve (summary, recommendations, red_flags, report) traduzidos.
+    """
+    if source_lang == target_lang:
+        return summary, recommendations, red_flags, report
+
+    t_summary = _translate_text(summary, source_lang, target_lang)
+    t_recommendations = [_translate_text(r, source_lang, target_lang) for r in (recommendations or [])]
+    t_red_flags = [_translate_text(r, source_lang, target_lang) for r in (red_flags or [])]
+    t_report = []
+    for item in report or []:
+        t_report.append({
+            **item,
+            "label": _translate_text(item.get("label", "") or "", source_lang, target_lang),
+            "evidence": _translate_text(item.get("evidence", "") or "", source_lang, target_lang),
+        })
+    return t_summary, t_recommendations, t_red_flags, t_report

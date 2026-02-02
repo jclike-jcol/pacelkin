@@ -1,4 +1,6 @@
 fastapi
-uvicorn
+uvicorn[standard]
 jinja2
 pypdf
+python-multipart
+deep-translator
