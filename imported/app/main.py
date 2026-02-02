@@ -34,6 +34,7 @@ from app.i18n import LANGUAGE_LABELS, SUPPORTED_LANGS, get_translations
 import json
 
 from app.services.profile_analysis import analyze_profile, translate_analysis_result
+from app.services.knowledge_base import get_knowledge_base_text
 from app.security import create_session_cookie, hash_password, parse_session_cookie, verify_password
 
 
@@ -253,12 +254,14 @@ def chat_page(request: Request):
     if redirect:
         return redirect
     messages = list_chat_messages(int(user["id"]))
+    kb_text = get_knowledge_base_text()
     return _template_response(
         request,
         "chat.html",
         {
             "user": user,
             "messages": messages,
+            "knowledge_base_available": bool(kb_text.strip()),
         },
     )
 
@@ -275,6 +278,8 @@ def chat_send(
     if content:
         create_chat_message(int(user["id"]), "user", content)
         lang = _get_lang(request)
+        # Base de conhecimento (prompt kit PDF + docs) disponível para futuras respostas com LLM
+        _ = get_knowledge_base_text()
         placeholder = get_translations(lang)["chat_placeholder_reply"]
         create_chat_message(int(user["id"]), "assistant", placeholder)
     return RedirectResponse(url="/chat", status_code=303)
