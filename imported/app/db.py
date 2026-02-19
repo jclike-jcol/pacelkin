@@ -62,6 +62,8 @@ def init_db() -> None:
                 score REAL,
                 summary TEXT,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                lang TEXT,
+                source_analysis_id INTEGER,
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             """
@@ -124,7 +126,8 @@ def init_db() -> None:
 
 
 def _ensure_user_columns(conn: sqlite3.Connection) -> None:
-    columns = {row["name"] for row in conn.execute("PRAGMA table_info(users)").fetchall()}
+    # PRAGMA table_info returns (cid, name, type, notnull, dflt_value, pk)
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(users)").fetchall()}
     to_add = {
         "first_name": "TEXT",
         "last_name": "TEXT",
@@ -137,13 +140,13 @@ def _ensure_user_columns(conn: sqlite3.Connection) -> None:
 
 
 def _ensure_profile_analysis_columns(conn: sqlite3.Connection) -> None:
-    columns = {
-        row["name"] for row in conn.execute("PRAGMA table_info(profile_analyses)").fetchall()
-    }
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(profile_analyses)").fetchall()}
     to_add = {
         "recommendations": "TEXT",
         "red_flags": "TEXT",
         "report_json": "TEXT",
+        "lang": "TEXT",
+        "source_analysis_id": "INTEGER",
     }
     for column, column_type in to_add.items():
         if column not in columns:
@@ -152,7 +155,7 @@ def _ensure_profile_analysis_columns(conn: sqlite3.Connection) -> None:
 
 def _ensure_post_entry_columns(conn: sqlite3.Connection) -> None:
     columns = {
-        row["name"] for row in conn.execute("PRAGMA table_info(post_entries)").fetchall()
+        row[1] for row in conn.execute("PRAGMA table_info(post_entries)").fetchall()
     }
     to_add = {
         "meaningful_comments": "INTEGER DEFAULT 0",
@@ -252,12 +255,14 @@ def create_profile_analysis(
     recommendations: list[str] | None = None,
     red_flags: list[str] | None = None,
     report: list[dict] | None = None,
-) -> None:
+    lang: str | None = None,
+    source_analysis_id: int | None = None,
+) -> int:
     with get_conn() as conn:
         recommendations_json = json.dumps(recommendations or [], ensure_ascii=False)
         red_flags_json = json.dumps(red_flags or [], ensure_ascii=False)
         report_json = json.dumps(report or [], ensure_ascii=False)
-        conn.execute(
+        cur = conn.execute(
             """
             INSERT INTO profile_analyses (
                 user_id,
@@ -268,9 +273,11 @@ def create_profile_analysis(
                 summary,
                 recommendations,
                 red_flags,
-                report_json
+                report_json,
+                lang,
+                source_analysis_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 user_id,
@@ -282,9 +289,12 @@ def create_profile_analysis(
                 recommendations_json,
                 red_flags_json,
                 report_json,
+                lang or "pt-PT",
+                source_analysis_id,
             ),
         )
         conn.commit()
+        return int(cur.lastrowid)
 
 
 def list_profile_analyses(user_id: int):
@@ -294,6 +304,15 @@ def list_profile_analyses(user_id: int):
             (user_id,),
         )
         return cur.fetchall()
+
+
+def get_profile_analysis_by_id(user_id: int, analysis_id: int):
+    with get_conn() as conn:
+        cur = conn.execute(
+            "SELECT * FROM profile_analyses WHERE user_id = ? AND id = ?",
+            (user_id, analysis_id),
+        )
+        return cur.fetchone()
 
 
 def create_chat_message(user_id: int, role: str, content: str) -> None:

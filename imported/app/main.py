@@ -1,11 +1,18 @@
 from pathlib import Path
+import os
 import time
+
+from dotenv import load_dotenv
+
+# Carregar .env na pasta do projeto (imported/) mesmo quando uvicorn corre noutra pasta
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 import csv
 import io
 from datetime import datetime, timedelta
 
+import jwt
 from fastapi import FastAPI, File, Form, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -18,6 +25,7 @@ from app.db import (
     create_profile_analysis,
     create_roadmap,
     create_user,
+    get_profile_analysis_by_id,
     get_stats,
     get_user_by_email,
     get_user_by_id,
@@ -32,14 +40,33 @@ from app.db import (
 from app.i18n import LANGUAGE_LABELS, SUPPORTED_LANGS, get_translations
 import json
 
-from app.services.profile_analysis import analyze_profile
+from app.services.profile_analysis import analyze_profile, translate_analysis_result
+from app.services.knowledge_base import get_knowledge_base_text
 from app.security import create_session_cookie, hash_password, parse_session_cookie, verify_password
+
+
+def _validate_password(password: str) -> bool:
+    """Exige: mínimo 6 caracteres, maiúscula, minúscula, carácter especial e um número."""
+    if len(password) < 6:
+        return False
+    if not any(c.isupper() for c in password) or not any(c.islower() for c in password):
+        return False
+    if not any(not c.isalnum() for c in password):
+        return False
+    if not any(c.isdigit() for c in password):
+        return False
+    return True
 
 
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 app = FastAPI(title="LinkedIn Optimizer Assistant")
+
+# Segredo partilhado com Supabase (Edge Function); strip() evita newline/espaço ao colar no .env
+CLOSERSPACE_SSO_SECRET = (os.getenv("CLOSERSPACE_PACELKIN_SSO_SECRET") or "").strip()
+# Diagnóstico 401: definir PACELKIN_SSO_DEBUG=1 no .env (só em dev); remove em produção
+SSO_DEBUG = (os.getenv("PACELKIN_SSO_DEBUG") or "").strip().lower() in ("1", "true", "yes")
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
@@ -90,6 +117,80 @@ def _template_response(request: Request, name: str, context: dict):
     return response
 
 
+@app.get("/sso")
+def sso(token: str | None = None):
+    """
+    Recebe o token JWT do CloserPace (SSO), valida e redireciona para /backoffice.
+    Alinhado com supabase/functions/pacelkin-sso-token: HS256, claims user_id, email, name, exp, iat.
+    Token vem em GET /sso?token=<JWT> (FastAPI devolve o query param já decodificado).
+    """
+    token = (token or "").strip()
+    if not token:
+        return JSONResponse(
+            status_code=400,
+            content={"code": 400, "message": "Missing token"},
+        )
+    if not CLOSERSPACE_SSO_SECRET:
+        return JSONResponse(
+            status_code=503,
+            content={"code": 503, "message": "SSO not configured"},
+        )
+    try:
+        payload = jwt.decode(
+            token,
+            CLOSERSPACE_SSO_SECRET,
+            algorithms=["HS256"],
+        )
+    except jwt.ExpiredSignatureError:
+        return JSONResponse(
+            status_code=401,
+            content={"code": 401, "message": "JWT expired"},
+        )
+    except jwt.InvalidSignatureError:
+        # Segredo diferente do usado no Supabase para assinar, ou token adulterado
+        body = {"code": 401, "message": "Invalid JWT"}
+        if SSO_DEBUG:
+            body["debug"] = {
+                "hint": "signature_invalid",
+                "token_length": len(token),
+                "secret_configured": True,
+            }
+        return JSONResponse(status_code=401, content=body)
+    except jwt.DecodeError:
+        body = {"code": 401, "message": "Invalid JWT"}
+        if SSO_DEBUG:
+            body["debug"] = {
+                "hint": "token_malformed",
+                "token_length": len(token),
+                "secret_configured": bool(CLOSERSPACE_SSO_SECRET),
+            }
+        return JSONResponse(status_code=401, content=body)
+    except jwt.InvalidTokenError:
+        body = {"code": 401, "message": "Invalid JWT"}
+        if SSO_DEBUG:
+            body["debug"] = {
+                "hint": "invalid_token",
+                "token_length": len(token),
+                "secret_configured": bool(CLOSERSPACE_SSO_SECRET),
+            }
+        return JSONResponse(status_code=401, content=body)
+    # Payload: user_id, email, name, exp, iat (conforme INTEGRACAO_CLOSERSPACE / jcol)
+    user_id = payload.get("user_id")
+    email = payload.get("email", "")
+    name = payload.get("name", "")
+    # Redirecionar para área logada
+    response = RedirectResponse(url="/backoffice", status_code=302)
+    # Cookie simples para o frontend saber que veio do SSO; podes depois trocar por sessão em DB
+    response.set_cookie(
+        key="pacelkin_sso_email",
+        value=email,
+        httponly=True,
+        samesite="lax",
+        max_age=3600,
+    )
+    return response
+
+
 @app.get("/", response_class=HTMLResponse)
 def landing(request: Request):
     user = _get_current_user(request)
@@ -119,6 +220,15 @@ def register_submit(
             request,
             "register.html",
             {"error": get_translations(lang)["error_email_exists"]},
+        )
+        response.status_code = 400
+        return response
+    lang = _get_lang(request)
+    if not _validate_password(password):
+        response = _template_response(
+            request,
+            "register.html",
+            {"error": get_translations(lang)["error_password_rules"]},
         )
         response.status_code = 400
         return response
@@ -180,6 +290,9 @@ def backoffice_dashboard(request: Request):
     insights = list_insights(int(user["id"]))
     analyses = _normalize_analyses(list_profile_analyses(int(user["id"])))
     error = request.query_params.get("error")
+    new_analysis_id = request.query_params.get("new_analysis_id")
+    new_analysis_lang = request.query_params.get("new_analysis_lang")
+    translated = request.query_params.get("translated")
     return _template_response(
         request,
         "backoffice.html",
@@ -190,6 +303,11 @@ def backoffice_dashboard(request: Request):
             "insights": insights,
             "analyses": analyses,
             "error": error,
+            "new_analysis_id": new_analysis_id,
+            "new_analysis_lang": new_analysis_lang,
+            "translated": translated,
+            "supported_langs": SUPPORTED_LANGS,
+            "language_labels": LANGUAGE_LABELS,
         },
     )
 
@@ -222,12 +340,14 @@ def chat_page(request: Request):
     if redirect:
         return redirect
     messages = list_chat_messages(int(user["id"]))
+    kb_text = get_knowledge_base_text()
     return _template_response(
         request,
         "chat.html",
         {
             "user": user,
             "messages": messages,
+            "knowledge_base_available": bool(kb_text.strip()),
         },
     )
 
@@ -244,6 +364,8 @@ def chat_send(
     if content:
         create_chat_message(int(user["id"]), "user", content)
         lang = _get_lang(request)
+        # Base de conhecimento (prompt kit PDF + docs) disponível para futuras respostas com LLM
+        _ = get_knowledge_base_text()
         placeholder = get_translations(lang)["chat_placeholder_reply"]
         create_chat_message(int(user["id"]), "assistant", placeholder)
     return RedirectResponse(url="/chat", status_code=303)
@@ -511,9 +633,10 @@ def add_profile_analysis(
     file_path = UPLOADS_DIR / safe_name
     with open(file_path, "wb") as f:
         f.write(pdf_file.file.read())
+    lang = _get_lang(request)
     try:
-        analysis = analyze_profile(str(file_path), _get_lang(request))
-        create_profile_analysis(
+        analysis = analyze_profile(str(file_path), lang)
+        analysis_id = create_profile_analysis(
             int(user["id"]),
             "pdf",
             str(file_path),
@@ -523,10 +646,69 @@ def add_profile_analysis(
             analysis.recommendations,
             analysis.red_flags,
             analysis.report,
+            lang=lang,
+        )
+        return RedirectResponse(
+            url=f"/backoffice?new_analysis_id={analysis_id}&new_analysis_lang={lang}",
+            status_code=303,
         )
     except Exception:
-        create_profile_analysis(int(user["id"]), "pdf", str(file_path), "Erro")
+        create_profile_analysis(int(user["id"]), "pdf", str(file_path), "Erro", lang=lang)
     return RedirectResponse(url="/backoffice", status_code=303)
+
+
+@app.post("/backoffice/profile-analysis/translate")
+def translate_profile_analysis(
+    request: Request,
+    analysis_id: int = Form(...),
+    target_lang: str = Form(...),
+):
+    user, redirect = _require_login(request)
+    if redirect:
+        return redirect
+    if target_lang not in SUPPORTED_LANGS:
+        return RedirectResponse(url="/backoffice?error=translate", status_code=303)
+    row = get_profile_analysis_by_id(int(user["id"]), analysis_id)
+    if not row:
+        return RedirectResponse(url="/backoffice?error=translate", status_code=303)
+    item = dict(row)
+    try:
+        item["recommendations"] = json.loads(item.get("recommendations") or "[]")
+    except Exception:
+        item["recommendations"] = []
+    try:
+        item["red_flags"] = json.loads(item.get("red_flags") or "[]")
+    except Exception:
+        item["red_flags"] = []
+    try:
+        item["report"] = json.loads(item.get("report_json") or "[]")
+    except Exception:
+        item["report"] = []
+    source_lang = item.get("lang") or "pt-PT"
+    if source_lang == target_lang:
+        return RedirectResponse(url="/backoffice", status_code=303)
+    summary_t, recs_t, flags_t, report_t = translate_analysis_result(
+        item.get("summary") or "",
+        item["recommendations"],
+        item["red_flags"],
+        item["report"],
+        source_lang,
+        target_lang,
+    )
+    create_profile_analysis(
+        int(user["id"]),
+        item.get("source") or "pdf",
+        item.get("file_path"),
+        "Concluído",
+        item.get("score"),
+        summary_t,
+        recs_t,
+        flags_t,
+        report_t,
+        lang=target_lang,
+        source_analysis_id=analysis_id,
+    )
+    return RedirectResponse(url="/backoffice?translated=1", status_code=303)
 
 
 def _normalize_analyses(rows):

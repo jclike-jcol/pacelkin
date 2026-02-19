@@ -44,9 +44,15 @@
         </label>
         <label>
           {{ t["register_password_label"] }}
-          <input type="password" name="password" required minlength="6" />
+          <input type="password" name="password" id="register-password" required minlength="6" autocomplete="new-password" />
+          <ul class="password-rules" aria-live="polite">
+            <li class="password-rule" data-rule="length">{{ t["password_rule_min_length"] }}</li>
+            <li class="password-rule" data-rule="upper_lower">{{ t["password_rule_upper_lower"] }}</li>
+            <li class="password-rule" data-rule="special">{{ t["password_rule_special"] }}</li>
+            <li class="password-rule" data-rule="number">{{ t["password_rule_number"] }}</li>
+          </ul>
         </label>
-        <button class="btn full" type="submit">{{ t["register_button"] }}</button>
+        <button class="btn full" type="submit" id="register-submit">{{ t["register_button"] }}</button>
       </form>
       <p class="muted">
         {{ t["register_footer"] }} <a href="/login">{{ t["nav_login"] }}</a>.
@@ -66,4 +72,38 @@
       </div>
     </div>
   </section>
+  <script>
+    (function() {
+      var pw = document.getElementById("register-password");
+      var submitBtn = document.getElementById("register-submit");
+      var rules = document.querySelectorAll(".password-rule");
+      if (!pw || !rules.length) return;
+
+      function check() {
+        var v = pw.value || "";
+        var hasUpper = /[A-Z]/.test(v);
+        var hasLower = /[a-z]/.test(v);
+        var hasSpecial = /[^A-Za-z0-9]/.test(v);
+        var hasNumber = /[0-9]/.test(v);
+        var okLength = v.length >= 6;
+
+        var allValid = true;
+        rules.forEach(function(li) {
+          var rule = li.getAttribute("data-rule");
+          var valid = false;
+          if (rule === "length") valid = okLength;
+          else if (rule === "upper_lower") valid = hasUpper && hasLower;
+          else if (rule === "special") valid = hasSpecial;
+          else if (rule === "number") valid = hasNumber;
+          if (!valid) allValid = false;
+          li.classList.toggle("valid", valid);
+        });
+        if (submitBtn) submitBtn.disabled = !allValid;
+      }
+
+      pw.addEventListener("input", check);
+      pw.addEventListener("change", check);
+      check();
+    })();
+  </script>
 {% endblock %}

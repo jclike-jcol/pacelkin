@@ -31,8 +31,38 @@
       <div class="card">
         <h2>{{ t["analysis_title"] }}</h2>
         <p class="muted">{{ t["analysis_lead"] }}</p>
+
+        <div class="profile-import-howto">
+          <h3 class="profile-import-howto-title">{{ t["profile_import_howto_title"] }}</h3>
+          <ol class="profile-import-steps">
+            <li>{{ t["profile_import_step1"] }}</li>
+            <li>{{ t["profile_import_step2"] }}</li>
+            <li>{{ t["profile_import_step3"] }}</li>
+            <li>{{ t["profile_import_step4"] }}</li>
+          </ol>
+        </div>
+
         {% if error == "pdf" %}
           <div class="alert">{{ t["analysis_error_pdf"] }}</div>
+        {% endif %}
+        {% if translated %}
+          <div class="alert alert-success">{{ t["analysis_translate_success"] }}</div>
+        {% endif %}
+        {% if new_analysis_id and new_analysis_lang and supported_langs and language_labels %}
+          <div class="card highlight">
+            <p><strong>{{ t["analysis_translate_suggestion"] }}</strong></p>
+            <div class="translate-actions">
+              {% for lang in supported_langs %}
+                {% if lang != new_analysis_lang %}
+                  <form method="post" action="/backoffice/profile-analysis/translate" class="inline-form">
+                    <input type="hidden" name="analysis_id" value="{{ new_analysis_id }}" />
+                    <input type="hidden" name="target_lang" value="{{ lang }}" />
+                    <button type="submit" class="btn btn-secondary">{{ t["analysis_translate_save"] }} {{ language_labels[lang] }}</button>
+                  </form>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
         {% endif %}
         <form method="post" action="/backoffice/profile-analysis" class="form" enctype="multipart/form-data">
           <label>
