@@ -1,11 +1,18 @@
 from pathlib import Path
+import os
 import time
+
+from dotenv import load_dotenv
+
+# Carregar .env na pasta do projeto (imported/) mesmo quando uvicorn corre noutra pasta
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 import csv
 import io
 from datetime import datetime, timedelta
 
+import jwt
 from fastapi import FastAPI, File, Form, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -56,6 +63,11 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 app = FastAPI(title="LinkedIn Optimizer Assistant")
 
+# Segredo partilhado com Supabase (Edge Function); strip() evita newline/espaço ao colar no .env
+CLOSERSPACE_SSO_SECRET = (os.getenv("CLOSERSPACE_PACELKIN_SSO_SECRET") or "").strip()
+# Diagnóstico 401: definir PACELKIN_SSO_DEBUG=1 no .env (só em dev); remove em produção
+SSO_DEBUG = (os.getenv("PACELKIN_SSO_DEBUG") or "").strip().lower() in ("1", "true", "yes")
+
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 
@@ -102,6 +114,80 @@ def _template_response(request: Request, name: str, context: dict):
     response = templates.TemplateResponse(name, {**base_context, **context})
     if request.query_params.get("lang") in SUPPORTED_LANGS:
         response.set_cookie("lang", lang, samesite="lax")
+    return response
+
+
+@app.get("/sso")
+def sso(token: str | None = None):
+    """
+    Recebe o token JWT do CloserPace (SSO), valida e redireciona para /backoffice.
+    Alinhado com supabase/functions/pacelkin-sso-token: HS256, claims user_id, email, name, exp, iat.
+    Token vem em GET /sso?token=<JWT> (FastAPI devolve o query param já decodificado).
+    """
+    token = (token or "").strip()
+    if not token:
+        return JSONResponse(
+            status_code=400,
+            content={"code": 400, "message": "Missing token"},
+        )
+    if not CLOSERSPACE_SSO_SECRET:
+        return JSONResponse(
+            status_code=503,
+            content={"code": 503, "message": "SSO not configured"},
+        )
+    try:
+        payload = jwt.decode(
+            token,
+            CLOSERSPACE_SSO_SECRET,
+            algorithms=["HS256"],
+        )
+    except jwt.ExpiredSignatureError:
+        return JSONResponse(
+            status_code=401,
+            content={"code": 401, "message": "JWT expired"},
+        )
+    except jwt.InvalidSignatureError:
+        # Segredo diferente do usado no Supabase para assinar, ou token adulterado
+        body = {"code": 401, "message": "Invalid JWT"}
+        if SSO_DEBUG:
+            body["debug"] = {
+                "hint": "signature_invalid",
+                "token_length": len(token),
+                "secret_configured": True,
+            }
+        return JSONResponse(status_code=401, content=body)
+    except jwt.DecodeError:
+        body = {"code": 401, "message": "Invalid JWT"}
+        if SSO_DEBUG:
+            body["debug"] = {
+                "hint": "token_malformed",
+                "token_length": len(token),
+                "secret_configured": bool(CLOSERSPACE_SSO_SECRET),
+            }
+        return JSONResponse(status_code=401, content=body)
+    except jwt.InvalidTokenError:
+        body = {"code": 401, "message": "Invalid JWT"}
+        if SSO_DEBUG:
+            body["debug"] = {
+                "hint": "invalid_token",
+                "token_length": len(token),
+                "secret_configured": bool(CLOSERSPACE_SSO_SECRET),
+            }
+        return JSONResponse(status_code=401, content=body)
+    # Payload: user_id, email, name, exp, iat (conforme INTEGRACAO_CLOSERSPACE / jcol)
+    user_id = payload.get("user_id")
+    email = payload.get("email", "")
+    name = payload.get("name", "")
+    # Redirecionar para área logada
+    response = RedirectResponse(url="/backoffice", status_code=302)
+    # Cookie simples para o frontend saber que veio do SSO; podes depois trocar por sessão em DB
+    response.set_cookie(
+        key="pacelkin_sso_email",
+        value=email,
+        httponly=True,
+        samesite="lax",
+        max_age=3600,
+    )
     return response
 
 

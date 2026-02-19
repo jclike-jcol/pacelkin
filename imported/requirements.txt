@@ -4,3 +4,5 @@ jinja2
 pypdf
 python-multipart
 deep-translator
+pyjwt
+python-dotenv
