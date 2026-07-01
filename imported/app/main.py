@@ -5,7 +5,10 @@ import time
 from dotenv import load_dotenv
 
 # Carregar .env na pasta do projeto (imported/) mesmo quando uvicorn corre noutra pasta
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+_env_dir = Path(__file__).resolve().parent.parent
+load_dotenv(_env_dir / ".env")
+# Fallback: .env na pasta pai (pacelkin/) para projetos com estrutura diferente
+load_dotenv(_env_dir.parent / ".env")
 import csv
 import io
 from datetime import datetime, timedelta
@@ -64,8 +67,15 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 app = FastAPI(title="LinkedIn Optimizer Assistant")
 
 # Segredo partilhado com Supabase (Edge Function); strip() evita newline/espaço ao colar no .env
-CLOSERSPACE_SSO_SECRET = (os.getenv("CLOSERSPACE_PACELKIN_SSO_SECRET") or "").strip()
-# Diagnóstico 401: definir PACELKIN_SSO_DEBUG=1 no .env (só em dev); remove em produção
+CLOSERPACE_SSO_SECRET = (os.getenv("CLOSERPACE_PACELKIN_SSO_SECRET") or "").strip()
+# Fallback: ler .env diretamente se getenv falhar
+if not CLOSERPACE_SSO_SECRET:
+    _env_file = _env_dir / ".env"
+    if _env_file.exists():
+        for line in _env_file.read_text(encoding="utf-8", errors="ignore").splitlines():
+            if line.startswith("CLOSERPACE_PACELKIN_SSO_SECRET="):
+                CLOSERPACE_SSO_SECRET = line.split("=", 1)[1].strip().strip('"\'')
+                break
 SSO_DEBUG = (os.getenv("PACELKIN_SSO_DEBUG") or "").strip().lower() in ("1", "true", "yes")
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
@@ -130,7 +140,7 @@ def sso(token: str | None = None):
             status_code=400,
             content={"code": 400, "message": "Missing token"},
         )
-    if not CLOSERSPACE_SSO_SECRET:
+    if not CLOSERPACE_SSO_SECRET:
         return JSONResponse(
             status_code=503,
             content={"code": 503, "message": "SSO not configured"},
@@ -138,7 +148,7 @@ def sso(token: str | None = None):
     try:
         payload = jwt.decode(
             token,
-            CLOSERSPACE_SSO_SECRET,
+            CLOSERPACE_SSO_SECRET,
             algorithms=["HS256"],
         )
     except jwt.ExpiredSignatureError:
@@ -162,7 +172,7 @@ def sso(token: str | None = None):
             body["debug"] = {
                 "hint": "token_malformed",
                 "token_length": len(token),
-                "secret_configured": bool(CLOSERSPACE_SSO_SECRET),
+                "secret_configured": bool(CLOSERPACE_SSO_SECRET),
             }
         return JSONResponse(status_code=401, content=body)
     except jwt.InvalidTokenError:
@@ -171,22 +181,43 @@ def sso(token: str | None = None):
             body["debug"] = {
                 "hint": "invalid_token",
                 "token_length": len(token),
-                "secret_configured": bool(CLOSERSPACE_SSO_SECRET),
+                "secret_configured": bool(CLOSERPACE_SSO_SECRET),
             }
         return JSONResponse(status_code=401, content=body)
     # Payload: user_id, email, name, exp, iat (conforme INTEGRACAO_CLOSERSPACE / jcol)
-    user_id = payload.get("user_id")
-    email = payload.get("email", "")
-    name = payload.get("name", "")
-    # Redirecionar para área logada
+    sso_user_id = payload.get("user_id")
+    email = (payload.get("email", "") or "").strip()
+    name = (payload.get("name", "") or "").strip()
+    if not email:
+        return JSONResponse(status_code=400, content={"code": 400, "message": "Missing email in token"})
+
+    # Obter ou criar utilizador no Pacelkin (SSO: sem password, usa hash placeholder)
+    user = get_user_by_email(email)
+    if user:
+        pacelkin_user_id = user["id"]
+    else:
+        parts = name.split(None, 1) if name else ["", ""]
+        first_name = parts[0] if parts else ""
+        last_name = parts[1] if len(parts) > 1 else ""
+        sso_placeholder = hash_password(f"sso-{sso_user_id or email}")
+        pacelkin_user_id = create_user(
+            email=email,
+            password_hash=sso_placeholder,
+            first_name=first_name,
+            last_name=last_name,
+            phone="",
+            nif="",
+        )
+
+    # Criar sessão local (cookie) para acesso ao backoffice
+    session_token = create_session_cookie(int(pacelkin_user_id))
     response = RedirectResponse(url="/backoffice", status_code=302)
-    # Cookie simples para o frontend saber que veio do SSO; podes depois trocar por sessão em DB
     response.set_cookie(
-        key="pacelkin_sso_email",
-        value=email,
+        key="session",
+        value=session_token,
         httponly=True,
         samesite="lax",
-        max_age=3600,
+        max_age=3600 * 12,
     )
     return response
 
